@@ -13,22 +13,12 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Send Confirmation" />
   <Description DefaultValue="Shows sender and recipients before sending with auto-send timer" />
-  <IconUrl DefaultValue="https://your-domain.com/assets/icon-64.png" />
-  <HighResolutionIconUrl DefaultValue="https://your-domain.com/assets/icon-128.png" />
-  <SupportUrl DefaultValue="https://your-domain.com/support" />
+  <IconUrl DefaultValue="https://raw.githubusercontent.com/alliebfaro/SmartAlert/refs/heads/main/assets/icon-64.svg" />
+  <HighResolutionIconUrl DefaultValue="https://raw.githubusercontent.com/alliebfaro/SmartAlert/refs/heads/main/assets/icon-128.svg" />
+  <SupportUrl DefaultValue="https://github.com/alliebfaro/SmartAlert" />
 
   <!-- Permissions -->
   <Permissions>ReadWriteItem</Permissions>
-
-  <!-- Form Settings -->
-  <FormSettings>
-    <Form xsi:type="ItemEdit">
-      <DesktopSettings>
-        <SourceLocation DefaultValue="https://your-domain.com/messageSend.html" />
-        <RequestedHeight>250</RequestedHeight>
-      </DesktopSettings>
-    </Form>
-  </FormSettings>
 
   <Hosts>
     <Host Name="Mailbox" />
@@ -88,14 +78,14 @@
 
       <Resources>
         <bt:Images>
-          <bt:Image id="Icon.16x16" DefaultValue="https://your-domain.com/assets/icon-16.png"/>
-          <bt:Image id="Icon.32x32" DefaultValue="https://your-domain.com/assets/icon-32.png"/>
-          <bt:Image id="Icon.80x80" DefaultValue="https://your-domain.com/assets/icon-80.png"/>
+          <bt:Image id="Icon.16x16" DefaultValue="https://raw.githubusercontent.com/alliebfaro/SmartAlert/refs/heads/main/assets/icon-16.svg"/>
+          <bt:Image id="Icon.32x32" DefaultValue="https://raw.githubusercontent.com/alliebfaro/SmartAlert/refs/heads/main/assets/icon-32.svg"/>
+          <bt:Image id="Icon.80x80" DefaultValue="https://raw.githubusercontent.com/alliebfaro/SmartAlert/refs/heads/main/assets/icon-80.svg"/>
         </bt:Images>
         <bt:Urls>
-          <bt:Url id="Commands.Url" DefaultValue="https://your-domain.com/commands.html" />
-          <bt:Url id="JSRuntime.Url" DefaultValue="https://your-domain.com/commands.js" />
-          <bt:Url id="WebViewRuntime.Url" DefaultValue="https://your-domain.com/commands.html" />
+          <bt:Url id="Commands.Url" DefaultValue="https://github.com/alliebfaro/SmartAlert/raw/refs/heads/main/commands.html" />
+          <bt:Url id="JSRuntime.Url" DefaultValue="https://github.com/alliebfaro/SmartAlert/raw/refs/heads/main/commands.js" />
+          <bt:Url id="WebViewRuntime.Url" DefaultValue="https://github.com/alliebfaro/SmartAlert/raw/refs/heads/main/commands.html" />
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="GroupLabel" DefaultValue="Send Confirmation"/>
