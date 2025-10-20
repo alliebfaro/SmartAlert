@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Send</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 24px;
+            background: #f5f5f5;
+            color: #323130;
+        }
+        
+        .dialog-container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .dialog-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .dialog-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #323130;
+        }
+
+        .timer-badge {
+            background: #0078d4;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 60px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+
+        .timer-badge.warning {
+            background: #d83b01;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #605e5c;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .from-info {
+            background: #f3f2f1;
+            border-left: 4px solid #0078d4;
+            padding: 16px;
+            border-radius: 4px;
+        }
+        
+        .from-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #323130;
+            margin-bottom: 4px;
+        }
+        
+        .from-email {
+            color: #605e5c;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        .recipients-container {
+            background: #faf9f8;
+            border: 1px solid #e1dfdd;
+            border-radius: 4px;
+            padding: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .recipient-group {
+            margin-bottom: 12px;
+        }
+
+        .recipient-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .recipient-type {
+            font-weight: 600;
+            font-size: 12px;
+            color: #323130;
+            margin-bottom: 6px;
+        }
+
+        .recipient-list {
+            list-style: none;
+        }
+
+        .recipient-item {
+            padding: 6px 0;
+            font-size: 14px;
+            color: #605e5c;
+            display: flex;
+            align-items: center;
+        }
+
+        .recipient-item:before {
+            content: "→";
+            margin-right: 8px;
+            color: #0078d4;
+        }
+
+        .no-recipients {
+            color: #a19f9d;
+            font-style: italic;
+            font-size: 14px;
+        }
+        
+        .button-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e1dfdd;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-send {
+            background: #0078d4;
+            color: white;
+        }
+        
+        .btn-send:hover {
+            background: #106ebe;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,120,212,0.3);
+        }
+
+        .btn-send:active {
+            transform: translateY(0);
+        }
+        
+        .btn-cancel {
+            background: #f3f2f1;
+            color: #323130;
+        }
+        
+        .btn-cancel:hover {
+            background: #e1dfdd;
+        }
+
+        .auto-send-note {
+            text-align: center;
+            font-size: 12px;
+            color: #605e5c;
+            margin-top: 12px;
+            font-style: italic;
+        }
+
+        .item-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e1dfdd;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #323130;
+            margin-left: 8px;
+        }
+
+        .recipients-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .recipients-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .recipients-container::-webkit-scrollbar-thumb {
+            background: #c8c6c4;
+            border-radius: 4px;
+        }
+
+        .recipients-container::-webkit-scrollbar-thumb:hover {
+            background: #a19f9d;
+        }
+    </style>
+</head>
+<body>
+    <div class="dialog-container">
+        <div class="dialog-header">
+            <div>
+                <span class="dialog-title">Confirm Send</span>
+                <span class="item-type-badge" id="itemTypeBadge">EMAIL</span>
+            </div>
+            <div class="timer-badge" id="timerBadge">20s</div>
+        </div>
+        
+        <div class="section">
+            <div class="section-label">Sending From</div>
+            <div class="from-info">
+                <div class="from-name" id="fromName">Loading...</div>
+                <div class="from-email" id="fromEmail"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-label">Recipients</div>
+            <div class="recipients-container" id="recipientsContainer">
+                <div class="no-recipients">Loading recipients...</div>
+            </div>
+        </div>
+        
+        <div class="button-container">
+            <button class="btn-cancel" onclick="cancelSend()">Cancel</button>
+            <button class="btn-send" onclick="confirmSend()">Send Now</button>
+        </div>
+
+        <div class="auto-send-note">
+            This will send automatically when the timer reaches zero
+        </div>
+    </div>
+
+    <script>
+        let countdownTimer;
+        let secondsRemaining = 20;
+        let dialogData = null;
+
+        Office.initialize = function() {
+            console.log('Send confirmation dialog initialized');
+            
+            Office.context.ui.addHandlerAsync(
+                Office.EventType.DialogParentMessageReceived,
+                onMessageFromParent
+            );
+        };
+
+        function onMessageFromParent(arg) {
+            try {
+                dialogData = JSON.parse(arg.message);
+                console.log('Received dialog data:', dialogData);
+                
+                updateUI(dialogData);
+                
+                secondsRemaining = dialogData.autoSendSeconds || 20;
+                startCountdown();
+                
+            } catch (error) {
+                console.error('Error parsing message from parent:', error);
+            }
+        }
+
+        function updateUI(data) {
+            document.getElementById('fromName').textContent = data.fromName || 'Unknown';
+            document.getElementById('fromEmail').textContent = data.fromEmail || '';
+            
+            const itemType = data.itemType === 'appointment' ? 'MEETING' : 'EMAIL';
+            document.getElementById('itemTypeBadge').textContent = itemType;
+            
+            const recipientsContainer = document.getElementById('recipientsContainer');
+            recipientsContainer.innerHTML = '';
+            
+            let hasRecipients = false;
+            
+            if (data.recipients && data.recipients.length > 0) {
+                data.recipients.forEach(group => {
+                    if (group.recipients && group.recipients.length > 0) {
+                        hasRecipients = true;
+                        
+                        const groupDiv = document.createElement('div');
+                        groupDiv.className = 'recipient-group';
+                        
+                        const typeLabel = document.createElement('div');
+                        typeLabel.className = 'recipient-type';
+                        typeLabel.textContent = group.type + ':';
+                        groupDiv.appendChild(typeLabel);
+                        
+                        const list = document.createElement('ul');
+                        list.className = 'recipient-list';
+                        
+                        group.recipients.forEach(recipient => {
+                            const item = document.createElement('li');
+                            item.className = 'recipient-item';
+                            
+                            const displayText = recipient.displayName 
+                                ? `${recipient.displayName} <${recipient.emailAddress}>`
+                                : recipient.emailAddress;
+                            
+                            item.textContent = displayText;
+                            list.appendChild(item);
+                        });
+                        
+                        groupDiv.appendChild(list);
+                        recipientsContainer.appendChild(groupDiv);
+                    }
+                });
+            }
+            
+            if (!hasRecipients) {
+                recipientsContainer.innerHTML = '<div class="no-recipients">No recipients</div>';
+            }
+        }
+
+        function startCountdown() {
+            const timerBadge = document.getElementById('timerBadge');
+            
+            countdownTimer = setInterval(() => {
+                secondsRemaining--;
+                timerBadge.textContent = secondsRemaining + 's';
+                
+                if (secondsRemaining <= 5) {
+                    timerBadge.classList.add('warning');
+                }
+                
+                if (secondsRemaining <= 0) {
+                    clearInterval(countdownTimer);
+                    autoSend();
+                }
+            }, 1000);
+        }
+
+        function autoSend() {
+            const response = {
+                action: 'send',
+                reason: 'timer_expired'
+            };
+            
+            Office.context.ui.messageParent(JSON.stringify(response));
+        }
+
+        function confirmSend() {
+            clearInterval(countdownTimer);
+            
+            const response = {
+                action: 'send',
+                reason: 'user_confirmed'
+            };
+            
+            Office.context.ui.messageParent(JSON.stringify(response));
+        }
+
+        function cancelSend() {
+            clearInterval(countdownTimer);
+            
+            const response = {
+                action: 'cancel',
+                reason: 'user_cancelled'
+            };
+            
+            Office.context.ui.messageParent(JSON.stringify(response));
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                confirmSend();
+            } else if (event.key === 'Escape') {
+                cancelSend();
+            }
+        });
+
+        window.addEventListener('beforeunload', function() {
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+        });
+    </script>
+</body>
+</html>
