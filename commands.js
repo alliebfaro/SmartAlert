@@ -25,20 +25,15 @@ function onMessageSendHandler(event) {
 
 // Handler for OnAppointmentSend event
 function onAppointmentSendHandler(event) {
-  console.log('OnAppointmentSend triggered');
-  const item = Office.context.mailbox.item;
-  
-  // Gather all required information
-  Promise.all([
-    getFromAddress(item),
-    getRecipients(item)
-  ]).then(([fromInfo, recipients]) => {
-    showSendConfirmationDialog(fromInfo, recipients, 'appointment', event);
-  }).catch(error => {
-    console.error('Error gathering appointment info:', error);
-    // On error, allow send to proceed
+  console.log('OnAppointmentSend triggered - prompt disabled for appointments');
+  // For now, do not show the confirmation prompt for appointments — allow send immediately.
+  try {
     event.completed({ allowEvent: true });
-  });
+  } catch (err) {
+    console.error('Error completing appointment send event:', err);
+    // best-effort fallback
+    try { event.completed({ allowEvent: true }); } catch (e) { /* ignore */ }
+  }
 }
 
 // Get sender information as a Promise
