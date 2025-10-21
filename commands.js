@@ -25,86 +25,153 @@ function onMessageSendHandler(event) {
 
 // Handler for OnAppointmentSend event
 function onAppointmentSendHandler(event) {
-  console.log('OnAppointmentSend triggered - prompt disabled for appointments');
-  // For now, do not show the confirmation prompt for appointments — allow send immediately.
-  try {
+  console.log('OnAppointmentSend triggered');
+  const item = Office.context.mailbox.item;
+  
+  // Gather all required information
+  Promise.all([
+    getFromAddress(item),
+    getRecipients(item)
+  ]).then(([fromInfo, recipients]) => {
+    showSendConfirmationDialog(fromInfo, recipients, 'appointment', event);
+  }).catch(error => {
+    console.error('Error gathering appointment info:', error);
+    // On error, allow send to proceed
     event.completed({ allowEvent: true });
+  });
+}
+
+// Helper to ensure event.completed is only called once
+function tryCompleteEvent(event, completionArgs) {
+  try {
+    if (!event || typeof event.completed !== 'function') {
+      console.warn('tryCompleteEvent: invalid event object', event);
+      return;
+    }
+    if (!event._completed) {
+      event._completed = true;
+      event.completed(completionArgs);
+    } else {
+      console.warn('Event already completed, skipping duplicate completion.');
+    }
   } catch (err) {
-    console.error('Error completing appointment send event:', err);
-    // best-effort fallback
-    try { event.completed({ allowEvent: true }); } catch (e) { /* ignore */ }
+    console.error('Error completing event:', err);
   }
 }
 
-// Get sender information as a Promise
+// Get sender information as a Promise (defensive)
 function getFromAddress(item) {
-  return new Promise((resolve, reject) => {
-    item.from.getAsync((result) => {
-      if (result.status === Office.AsyncResultStatus.Succeeded) {
-        resolve({
-          name: result.value.displayName,
-          email: result.value.emailAddress
-        });
-      } else {
-        reject(result.error);
+  return new Promise((resolve) => {
+    try {
+      if (!item) {
+        resolve({ name: 'Unknown', email: '' });
+        return;
       }
-    });
+
+      // Some hosts expose a simple from object
+      if (item.from && (typeof item.from === 'object') && !item.from.getAsync) {
+        resolve({
+          name: item.from.displayName || item.from.name || 'Unknown',
+          email: item.from.emailAddress || item.from.address || ''
+        });
+        return;
+      }
+
+      // If API is available, use it
+      if (item.from && typeof item.from.getAsync === 'function') {
+        item.from.getAsync((result) => {
+          try {
+            if (result && result.status === Office.AsyncResultStatus.Succeeded && result.value) {
+              resolve({
+                name: result.value.displayName || 'Unknown',
+                email: result.value.emailAddress || ''
+              });
+            } else {
+              console.warn('getFromAddress: getAsync did not succeed', result && result.error);
+              resolve({ name: 'Unknown', email: '' });
+            }
+          } catch (err) {
+            console.error('getFromAddress inner error:', err);
+            resolve({ name: 'Unknown', email: '' });
+          }
+        });
+        return;
+      }
+
+      // Fallback
+      resolve({ name: 'Unknown', email: '' });
+    } catch (err) {
+      console.error('getFromAddress unexpected error:', err);
+      resolve({ name: 'Unknown', email: '' });
+    }
   });
 }
 
-// Get all recipients (To, Cc, Bcc) as a Promise
+// Get all recipients (To, Cc, Bcc) as a Promise (defensive)
 function getRecipients(item) {
-  return new Promise((resolve, reject) => {
-    const recipientPromises = [];
-    
-    // Get To recipients
-    recipientPromises.push(
-      new Promise((res) => {
-        item.to.getAsync((result) => {
-          if (result.status === Office.AsyncResultStatus.Succeeded) {
-            res({ type: 'To', recipients: result.value });
-          } else {
-            res({ type: 'To', recipients: [] });
-          }
-        });
-      })
-    );
-    
-    // Get Cc recipients
-    recipientPromises.push(
-      new Promise((res) => {
-        item.cc.getAsync((result) => {
-          if (result.status === Office.AsyncResultStatus.Succeeded) {
-            res({ type: 'Cc', recipients: result.value });
-          } else {
-            res({ type: 'Cc', recipients: [] });
-          }
-        });
-      })
-    );
-    
-    // Get Bcc recipients (if available)
-    if (item.bcc) {
-      recipientPromises.push(
-        new Promise((res) => {
-          item.bcc.getAsync((result) => {
-            if (result.status === Office.AsyncResultStatus.Succeeded) {
-              res({ type: 'Bcc', recipients: result.value });
+  return new Promise((resolve) => {
+    try {
+      const recipientPromises = [];
+
+      const pushIfApi = (propName, typeLabel) => {
+        if (item && item[propName] && typeof item[propName].getAsync === 'function') {
+          recipientPromises.push(new Promise((res) => {
+            item[propName].getAsync((result) => {
+              if (result && result.status === Office.AsyncResultStatus.Succeeded && Array.isArray(result.value)) {
+                res({ type: typeLabel, recipients: result.value });
+              } else {
+                res({ type: typeLabel, recipients: [] });
+              }
+            });
+          }));
+        } else {
+          // API not available for this property -> resolve empty
+          recipientPromises.push(Promise.resolve({ type: typeLabel, recipients: [] }));
+        }
+      };
+
+      // Message-style recipients
+      pushIfApi('to', 'To');
+      pushIfApi('cc', 'Cc');
+      pushIfApi('bcc', 'Bcc');
+
+      // Appointment-style attendees (if present)
+      if (item && item.requiredAttendees && typeof item.requiredAttendees.getAsync === 'function') {
+        recipientPromises.push(new Promise((res) => {
+          item.requiredAttendees.getAsync((result) => {
+            if (result && result.status === Office.AsyncResultStatus.Succeeded && Array.isArray(result.value)) {
+              res({ type: 'Required', recipients: result.value });
             } else {
-              res({ type: 'Bcc', recipients: [] });
+              res({ type: 'Required', recipients: [] });
             }
           });
-        })
-      );
+        }));
+      }
+
+      if (item && item.optionalAttendees && typeof item.optionalAttendees.getAsync === 'function') {
+        recipientPromises.push(new Promise((res) => {
+          item.optionalAttendees.getAsync((result) => {
+            if (result && result.status === Office.AsyncResultStatus.Succeeded && Array.isArray(result.value)) {
+              res({ type: 'Optional', recipients: result.value });
+            } else {
+              res({ type: 'Optional', recipients: [] });
+            }
+          });
+        }));
+      }
+
+      Promise.all(recipientPromises).then(results => resolve(results)).catch(err => {
+        console.error('getRecipients Promise.all error:', err);
+        resolve([]);
+      });
+    } catch (err) {
+      console.error('getRecipients unexpected error:', err);
+      resolve([]);
     }
-    
-    Promise.all(recipientPromises).then(results => {
-      resolve(results);
-    }).catch(reject);
   });
 }
 
-// Show the confirmation dialog with timer
+// Show the confirmation dialog with timer (safe messaging + single completion)
 function showSendConfirmationDialog(fromInfo, recipientsData, itemType, event) {
   const dialogData = {
     fromName: fromInfo.name,
@@ -113,76 +180,78 @@ function showSendConfirmationDialog(fromInfo, recipientsData, itemType, event) {
     itemType: itemType,
     autoSendSeconds: 20
   };
-  
-  // Open the dialog
+
+  const dialogUrl = new URL('sendConfirmDialog.html', window.location.href).href;
   Office.context.ui.displayDialogAsync(
-    'https://alliebfaro.github.io/SmartAlert/sendConfirmDialog.html',
+    dialogUrl,
     { height: 60, width: 45, promptBeforeOpen: false },
     (asyncResult) => {
       if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-        console.error('Dialog failed to open:', asyncResult.error.message);
-        // If dialog fails, allow send to continue
-        event.completed({ allowEvent: true });
+        console.error('Dialog failed to open:', asyncResult.error && asyncResult.error.message);
+        tryCompleteEvent(event, { allowEvent: true });
         return;
       }
-      
+
       const dialog = asyncResult.value;
-      let dialogMessageSent = false;
-      
-      // Handle messages from dialog
+      let messageSent = false;
+
+      const finish = (allow, opts) => {
+        tryCompleteEvent(event, Object.assign({ allowEvent: !!allow }, opts || {}));
+        try { dialog.close(); } catch (e) { /* ignore */ }
+      };
+
       dialog.addEventHandler(Office.EventType.DialogMessageReceived, (arg) => {
-        dialog.close();
-        
         try {
           const response = JSON.parse(arg.message);
-          
           if (response.action === 'send') {
-            // User clicked Send or timer expired
             console.log('Send confirmed:', response.reason);
-            event.completed({ allowEvent: true });
+            finish(true);
           } else if (response.action === 'cancel') {
-            // User clicked Cancel
             console.log('Send cancelled by user');
-            event.completed({ 
-              allowEvent: false, 
-              errorMessage: 'Send cancelled by user.' 
-            });
+            finish(false, { errorMessage: 'Send cancelled by user.' });
+          } else {
+            console.warn('Unknown dialog response, allowing send', response);
+            finish(true);
           }
-        } catch (error) {
-          console.error('Error parsing dialog response:', error);
-          event.completed({ allowEvent: true });
+        } catch (err) {
+          console.error('Error parsing dialog response:', err);
+          finish(true);
         }
       });
-      
-      // Handle dialog being closed without response
+
       dialog.addEventHandler(Office.EventType.DialogEventReceived, (arg) => {
-        console.log('Dialog event:', arg);
-        if (arg.error === 12006) { // Dialog closed by user
-          dialog.close();
-          event.completed({ 
-            allowEvent: false, 
-            errorMessage: 'Send cancelled.' 
-          });
-        }
+        console.log('Dialog event received:', arg);
+        // treat any dialog event as cancellation fallback
+        finish(false, { errorMessage: 'Send cancelled (dialog closed).' });
       });
-      
-      // Send data to dialog after a brief delay to ensure it's ready
-      setTimeout(() => {
-        if (!dialogMessageSent) {
+
+      // Retry messaging a few times
+      let attempts = 0;
+      const tryMessageChild = () => {
+        try {
           dialog.messageChild(JSON.stringify(dialogData));
-          dialogMessageSent = true;
+          messageSent = true;
+        } catch (err) {
+          attempts++;
+          if (attempts < 5) {
+            setTimeout(tryMessageChild, 250);
+          } else {
+            console.warn('Failed to message dialog child, allowing send as fallback');
+            finish(true);
+          }
         }
-      }, 500);
+      };
+      tryMessageChild();
     }
   );
 }
 
 // Register the functions
 Office.actions.associate("onMessageSendHandler", onMessageSendHandler);
-Office.actions.associate("onAppointmentSendHandler", onAppointmentSendHandler);
+//Office.actions.associate("onAppointmentSendHandler", onAppointmentSendHandler);
 
 // Make functions available globally
 if (typeof global !== 'undefined') {
   global.onMessageSendHandler = onMessageSendHandler;
-  global.onAppointmentSendHandler = onAppointmentSendHandler;
+//  global.onAppointmentSendHandler = onAppointmentSendHandler;
 }

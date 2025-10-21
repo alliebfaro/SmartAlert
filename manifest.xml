@@ -17,6 +17,11 @@
   <HighResolutionIconUrl DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-128.svg" />
   <SupportUrl DefaultValue="https://github.com/alliebfaro/SmartAlert" />
 
+  <!-- Allowlisted origins for dialogs/resources -->
+  <AppDomains>
+    <AppDomain>https://alliebfaro.github.io</AppDomain>
+  </AppDomains>
+
   <!-- Permissions -->
   <Permissions>ReadWriteItem</Permissions>
 
@@ -26,7 +31,7 @@
 
   <Requirements>
     <Sets>
-      <Set Name="Mailbox" MinVersion="1.13" />
+      <Set Name="Mailbox" MinVersion="1.10" />
     </Sets>
   </Requirements>
 
