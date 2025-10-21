@@ -121,7 +121,7 @@ function showSendConfirmationDialog(fromInfo, recipientsData, itemType, event) {
   
   // Open the dialog
   Office.context.ui.displayDialogAsync(
-    'https://github.com/alliebfaro/SmartAlert/raw/refs/heads/main/sendConfirmDialog.html',
+    'https://alliebfaro.github.io/SmartAlert/sendConfirmDialog.html',
     { height: 60, width: 45, promptBeforeOpen: false },
     (asyncResult) => {
       if (asyncResult.status === Office.AsyncResultStatus.Failed) {
