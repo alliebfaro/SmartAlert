@@ -7,7 +7,7 @@
   xsi:type="MailApp">
 
   <!-- Basic Settings -->
-  <Id>12345678-1234-1234-1234-123456789012</Id>
+  <Id>87b67b4f-e283-4bb9-b831-31db597fa88c</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>Your Organization</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
