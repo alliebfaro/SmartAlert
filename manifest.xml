@@ -13,8 +13,8 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Send Confirmation" />
   <Description DefaultValue="Shows sender and recipients before sending with auto-send timer" />
-  <IconUrl DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-64.svg" />
-  <HighResolutionIconUrl DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-128.svg" />
+  <IconUrl DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-64.png" />
+  <HighResolutionIconUrl DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-128.png" />
   <SupportUrl DefaultValue="https://github.com/alliebfaro/SmartAlert" />
 
   <!-- Allowlisted origins for dialogs/resources -->
@@ -83,9 +83,9 @@
 
       <Resources>
         <bt:Images>
-          <bt:Image id="Icon.16x16" DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-16.svg"/>
-          <bt:Image id="Icon.32x32" DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-32.svg"/>
-          <bt:Image id="Icon.80x80" DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-80.svg"/>
+          <bt:Image id="Icon.16x16" DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-16.png"/>
+          <bt:Image id="Icon.32x32" DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-32.png"/>
+          <bt:Image id="Icon.80x80" DefaultValue="https://alliebfaro.github.io/SmartAlert/assets/icon-80.png"/>
         </bt:Images>
         <bt:Urls>
           <bt:Url id="Commands.Url" DefaultValue="https://alliebfaro.github.io/SmartAlert/commands.html" />
